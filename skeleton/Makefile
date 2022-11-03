@@ -16,12 +16,20 @@ HEADERS := $(wildcard *.h)
 SOURCES := $(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
 TARGET := fat-fuse
+VOLUME := ../resources/file.img
+MOUNTPOINT := mountpoint
 
 all: $(TARGET)
 
+mount:
+	mkdir -p $(MOUNTPOINT)
+	./$(TARGET) $(VOLUME) $(MOUNTPOINT)
+
+unmount:
+	umount $(MOUNTPOINT)
+
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
 
 test-ht: hierarchy_tree.o
 	make -C tests test_ht

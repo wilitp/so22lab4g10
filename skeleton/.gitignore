@@ -58,3 +58,5 @@ fat-fuse
 
 # tests
 tests/*_runner
+
+mountpoint/*
