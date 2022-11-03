@@ -26,26 +26,29 @@
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
 
-// static void now_to_str(char *buf) {
-//     time_t now = time(NULL);
-//     struct tm *timeinfo;
-//     timeinfo = localtime(&now);
+static void now_to_str(char *buf) {
+    time_t now = time(NULL);
+    struct tm *timeinfo;
+    timeinfo = localtime(&now);
 
-//     strftime(buf, DATE_MESSAGE_SIZE, "%d-%m-%Y %H:%M", timeinfo);
-// }
+    strftime(buf, DATE_MESSAGE_SIZE, "%d-%m-%Y %H:%M", timeinfo);
+}
 
-// static void fat_fuse_log_activity(char *operation_type, fat_file file) {
-//     char buf[LOG_MESSAGE_SIZE] = "";
-//     now_to_str(buf);
-//     strcat(buf, "\t");
-//     strcat(buf, getlogin());
-//     strcat(buf, "\t");
-//     strcat(buf, file->filepath);
-//     strcat(buf, "\t");
-//     strcat(buf, operation_type);
-//     strcat(buf, "\n");
-//     int message_size = strlen(buf);
-// }
+static void fat_fuse_log_activity(char *operation_type, fat_file file) {
+    char buf[LOG_MESSAGE_SIZE] = "";
+    now_to_str(buf);
+    strcat(buf, "\t");
+    strcat(buf, getlogin());
+    strcat(buf, "\t");
+    strcat(buf, file->filepath);
+    strcat(buf, "\t");
+    strcat(buf, operation_type);
+    strcat(buf, "\n");
+    int message_size = strlen(buf);
+    fat_file parent = fat_tree_get_parent(file);
+
+    fat_file_pwrite(file->filepath, buf, message_size, file->dentry->file_size, )
+}
 
 
 /* Get file attributes (file descriptor version) */
