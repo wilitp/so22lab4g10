@@ -126,6 +126,11 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
         vol->file_tree =
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
     }
+
+    if(fat_tree_node_search(vol->file_tree, "/fs.log") == NULL  && strcmp(dir->filepath, "/") == 0) {
+        DEBUG("Create the log file\n");
+        fat_fuse_mknod("/fs.log", 0, 0);
+    }
 }
 
 /* Add entries of a directory in @fi to @buf using @filler function. */
