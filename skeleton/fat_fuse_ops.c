@@ -45,9 +45,13 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     strcat(buf, operation_type);
     strcat(buf, "\n");
     int message_size = strlen(buf);
-    fat_file parent = fat_tree_get_parent(file);
 
-    fat_file_pwrite(file->filepath, buf, message_size, file->dentry->file_size, )
+    fat_volume vol = get_fat_volume();
+    fat_tree_node log_file_node = fat_tree_node_search(vol->file_tree, "/fs.log");
+    fat_file log_file = fat_tree_get_file(log_file_node);
+    fat_file log_file_parent = fat_tree_get_parent(log_file_node);
+
+    fat_file_pwrite(log_file, buf, message_size, log_file->dentry->file_size, log_file_parent);
 }
 
 
@@ -175,11 +179,14 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 /* Read data from a file */
 int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
                   struct fuse_file_info *fi) {
+
     errno = 0;
     int bytes_read;
     fat_tree_node file_node = (fat_tree_node)fi->fh;
     fat_file file = fat_tree_get_file(file_node);
     fat_file parent = fat_tree_get_parent(file_node);
+
+    fat_fuse_log_activity("Read", file);
 
     bytes_read = fat_file_pread(file, buf, size, offset, parent);
     if (errno != 0) {
@@ -195,6 +202,8 @@ int fat_fuse_write(const char *path, const char *buf, size_t size, off_t offset,
     fat_tree_node file_node = (fat_tree_node)fi->fh;
     fat_file file = fat_tree_get_file(file_node);
     fat_file parent = fat_tree_get_parent(file_node);
+
+    fat_fuse_log_activity("Write", file);
 
     if (size == 0)
         return 0; // Nothing to write
