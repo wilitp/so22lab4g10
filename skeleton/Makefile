@@ -25,6 +25,10 @@ mount:
 	mkdir -p $(MOUNTPOINT)
 	./$(TARGET) $(VOLUME) $(MOUNTPOINT)
 
+mount-dev:
+	mkdir -p $(MOUNTPOINT)
+	./$(TARGET) -f $(VOLUME) $(MOUNTPOINT)
+
 unmount:
 	umount $(MOUNTPOINT)
 
