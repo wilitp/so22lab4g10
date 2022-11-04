@@ -134,6 +134,7 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
     }
 
+    // Creacion de fs.log  
     if(fat_tree_node_search(vol->file_tree, "/fs.log") == NULL  && strcmp(dir->filepath, "/") == 0) {
         DEBUG("Create the log file\n");
         fat_fuse_mknod("/fs.log", 0, 0);
@@ -165,11 +166,15 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
     children = fat_tree_flatten_h_children(dir_node);
+    // Arreglo null-terminated de hijos
+    // children -> *child1 | *child2 | *child 3 | *child4 | NULL
     child = children;
     while (*child != NULL) {
-        error = (*filler)(buf, (*child)->name, NULL, 0);
-        if (error != 0) {
-            return -errno;
+        if(strcmp((*child)->filepath, "/fs.log") != 0){
+            error = (*filler)(buf, (*child)->name, NULL, 0);
+            if (error != 0) {
+                return -errno;
+            }
         }
         child++;
     }
