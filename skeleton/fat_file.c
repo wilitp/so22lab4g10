@@ -355,7 +355,6 @@ void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     }
     DEBUG("Adding child \"%s\" to \"%s\" in position %u", child->name,
           parent->filepath, parent->dir.nentries);
-    child->pos_in_parent = nentries;
     parent->dir.nentries++;
 }
 
