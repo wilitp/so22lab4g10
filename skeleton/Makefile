@@ -30,7 +30,7 @@ mount-dev:
 	./$(TARGET) -f $(VOLUME) $(MOUNTPOINT)
 
 unmount:
-	umount $(MOUNTPOINT)
+	fusermount -u $(MOUNTPOINT)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

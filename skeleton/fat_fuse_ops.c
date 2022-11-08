@@ -47,7 +47,7 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     int message_size = strlen(buf);
 
     fat_volume vol = get_fat_volume();
-    fat_tree_node log_file_node = fat_tree_node_search(vol->file_tree, "/fs.log");
+    fat_tree_node log_file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
     fat_file log_file = fat_tree_get_file(log_file_node);
     fat_file log_file_parent = fat_tree_get_parent(log_file_node);
 
@@ -134,10 +134,16 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
     }
 
-    // Creacion de fs.log  
-    if(fat_tree_node_search(vol->file_tree, "/fs.log") == NULL  && strcmp(dir->filepath, "/") == 0) {
-        DEBUG("Create the log file\n");
-        fat_fuse_mknod("/fs.log", 0, 0);
+
+    if(strcmp(dir->filepath, "/") == 0) {
+        // Inicializar log dir huerfano y insertarlo como hijo de /(root node)
+        bb_init_log_dir(); 
+        // Creacion de /bb/fs.log si es que no existe en el directorio creado/encontrado
+        // Y si fue creado con exito el dir /bb
+        if(fat_tree_node_search(vol->file_tree, BB_DIRNAME) != NULL && fat_tree_node_search(vol->file_tree, BB_LOG_FILE) == NULL) {
+            DEBUG("Create the log file\n");
+            fat_fuse_mknod(BB_LOG_FILE, 0, 0);
+        }
     }
 }
 
@@ -170,7 +176,7 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // children -> *child1 | *child2 | *child 3 | *child4 | NULL
     child = children;
     while (*child != NULL) {
-        if(strcmp((*child)->filepath, "/fs.log") != 0){
+        if(strcmp((*child)->filepath, BB_LOG_FILE) != 0){
             error = (*filler)(buf, (*child)->name, NULL, 0);
             if (error != 0) {
                 return -errno;
