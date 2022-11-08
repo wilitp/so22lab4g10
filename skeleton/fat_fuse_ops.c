@@ -136,8 +136,10 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
 
 
     if(strcmp(dir->filepath, "/") == 0) {
-        // Inicializar log dir huerfano y insertarlo como hijo de /(root node)
+        // Inicializar log dir huerfano e insertarlo como hijo de /(root node)
         bb_init_log_dir(); 
+        fat_fuse_read_children(fat_tree_node_search(vol->file_tree, BB_DIRNAME));
+
         // Creacion de /bb/fs.log si es que no existe en el directorio creado/encontrado
         // Y si fue creado con exito el dir /bb
         if(fat_tree_node_search(vol->file_tree, BB_DIRNAME) != NULL && fat_tree_node_search(vol->file_tree, BB_LOG_FILE) == NULL) {

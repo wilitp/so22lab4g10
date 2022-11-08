@@ -37,17 +37,13 @@ u32 search_bb_orphan_dir_cluster() {
         // u32 cluster_table_value = le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]);
         u32 cluster_table_value = le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]);
         if(cluster_table_value == FAT_CLUSTER_BAD_SECTOR) {
-            fat_dir_entry buf = alloca(sizeof(u32));
-
-            // Leer la primera entrada del directorio
-            if(full_pread(vol->table->fd, buf, sizeof(32), fat_table_cluster_offset(table, bb_dir_start_cluster)) < 0) {
-                continue;
-            }
-
+            GList * entries = fat_file_read_entries_from_cluster(bb_dir_start_cluster);
             // Ver si la primera entrada es fs.log
 
-            if(bb_is_log_file_dentry(buf))
+            if(g_list_length(entries) > 0 && bb_is_log_file_dentry(g_list_nth(entries, 0)->data)) {
+                g_list_free_full(entries, free);
                 break;
+            }
         } else {
             any_free_until_now = any_free_until_now || cluster_table_value == FAT_CLUSTER_FREE;
         }
@@ -95,8 +91,6 @@ static int bb_create_new_orphan_dir(u32 start_cluster) {
     root_node = fat_tree_node_search(vol->file_tree, "/");
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
 
-    // Marcar el cluster como malo
-    fat_table_set_next_cluster(vol->table, start_cluster, FAT_CLUSTER_BAD_SECTOR);
 
     return -errno;
 }
@@ -109,19 +103,15 @@ int bb_init_log_dir() {
 
     // Hacer la busqueda
     u32 start_cluster = search_bb_orphan_dir_cluster();
-    if(start_cluster == 0) {
-        start_cluster = fat_table_get_next_free_cluster(vol->table);
-        bb_create_new_orphan_dir(start_cluster);
-    } else {
-        fat_file bb_dir = fat_file_init(vol->table, true, BB_DIRNAME);
-        bb_dir->start_cluster = start_cluster;
-        fat_tree_node root_node = fat_tree_node_search(vol->file_tree, "/");
-        vol->file_tree = fat_tree_insert(vol->file_tree, root_node, bb_dir);
-        // vol->file_tree = fat_fuse_read_children();
-    }
-
 
     // Si no existe buscamos uno libre y lo inicializamos ahi
+    if(start_cluster == 0) {
+        start_cluster = fat_table_get_next_free_cluster(vol->table);
+        // Marcar el cluster como malo
+        fat_table_set_next_cluster(vol->table, start_cluster, FAT_CLUSTER_BAD_SECTOR);
+    } 
+    bb_create_new_orphan_dir(start_cluster);
+
 
     return -errno;
 }
