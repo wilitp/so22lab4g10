@@ -157,10 +157,6 @@ void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf);
  */
 void fat_file_dentry_add_child(fat_file parent, fat_file child);
 
-
-// Reads dentries from cluster, assuming it corresponds to the start_cluster of a directory
-GList *fat_file_read_entries_from_cluster(u32 cur_cluster);
-
 /* Creates fat_file instances from @dir's directory entries in the FAT table.
  * Returns a GList with references to newly created fat_file.
  * It is not recursive (does not read files in subdirectories).

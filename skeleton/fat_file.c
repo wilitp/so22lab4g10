@@ -404,55 +404,6 @@ static void read_cluster_dir_entries(u8 *buffer, fat_dir_entry end_ptr,
     }
 }
 
-// Assumes cur_cluster corresponds to the first cluster of a directory
-GList *fat_file_read_entries_from_cluster(u32 cur_cluster) {
-    u32 bytes_per_cluster = 0;
-    off_t cur_offset = 0;
-    u8 *buf = NULL;
-    GList *entry_list = NULL;
-    fat_volume vol = get_fat_volume();
-    fat_table table = vol->table;
-
-    bytes_per_cluster = fat_table_bytes_per_cluster(table);
-    if (!fat_table_is_valid_cluster_number(table, cur_cluster)) {
-        fat_error("Cluster number %u is invalid", cur_cluster);
-        errno = EIO;
-        return NULL;
-    }
-    cur_offset = fat_table_cluster_offset(table, cur_cluster);
-
-    buf = alloca(bytes_per_cluster);
-    while (fat_table_cluster_is_valid(cur_cluster)) {
-        fat_dir_entry end_ptr;
-        end_ptr = (fat_dir_entry)(buf + bytes_per_cluster) - 1;
-        if (full_pread(table->fd, buf, bytes_per_cluster, cur_offset) !=
-            bytes_per_cluster) {
-            errno = EIO;
-            return NULL;
-        }
-
-
-        // read_cluster_dir_entries(buf, end_ptr, dir, &entry_list);
-        fat_dir_entry disk_dentry_ptr = NULL;
-        u32 dir_entries_processed = 0;
-        for (disk_dentry_ptr = (fat_dir_entry)buf; disk_dentry_ptr <= end_ptr;
-             disk_dentry_ptr++, dir_entries_processed++) {
-            if (is_end_of_directory(disk_dentry_ptr)) {
-                break;
-            }
-            if (ignore_dentry(disk_dentry_ptr)) {            
-                continue;
-            }
-            fat_dir_entry new_entry = init_direntry_from_buff(disk_dentry_ptr);
-            entry_list = g_list_append(entry_list, new_entry);
-        }
-
-        cur_cluster = fat_table_get_next_cluster(table, cur_cluster);
-        cur_offset = fat_table_cluster_offset(table, cur_cluster);
-    }
-    return entry_list;
-}
-
 GList *fat_file_read_children(fat_file dir) {
     u32 bytes_per_cluster = 0, cur_cluster = 0;
     off_t cur_offset = 0;

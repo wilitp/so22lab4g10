@@ -34,14 +34,14 @@ u32 search_bb_orphan_dir_cluster() {
     u32 cluster_group_count = 1;
     for (;;bb_dir_start_cluster++) {
 
-        // u32 cluster_table_value = le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]);
         u32 cluster_table_value = le32_to_cpu(((const le32 *)table->fat_map)[bb_dir_start_cluster]);
         if(cluster_table_value == FAT_CLUSTER_BAD_SECTOR) {
-            GList * entries = fat_file_read_entries_from_cluster(bb_dir_start_cluster);
-            // Ver si la primera entrada es fs.log
+            u32 bytes_per_cluster = fat_table_bytes_per_cluster(table);
+            off_t offset = fat_table_cluster_offset(table, bb_dir_start_cluster);
+            u8 *buf = alloca(bytes_per_cluster);
+            full_pread(table->fd, buf, bytes_per_cluster, offset);
 
-            if(g_list_length(entries) > 0 && bb_is_log_file_dentry(g_list_nth(entries, 0)->data)) {
-                g_list_free_full(entries, free);
+            if(bb_is_log_file_dentry((fat_dir_entry) buf)) {
                 break;
             }
         } else {
