@@ -4,6 +4,8 @@
 #include "fat_fs_tree.h"
 #include <fuse/fuse.h>
 
+int fat_fuse_unlink(const char *path);
+
 /* Get file attributes (file descriptor version) */
 int fat_fuse_fgetattr(const char *path, struct stat *stbuf,
                       struct fuse_file_info *fi);

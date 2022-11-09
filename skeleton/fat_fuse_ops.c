@@ -322,6 +322,21 @@ int fat_fuse_utime(const char *path, struct utimbuf *buf) {
     return -errno;
 }
 
+
+int fat_fuse_unlink(const char *path) {
+
+  // Dejamos el archivo en tamanio 0
+  // Esto tiene un toq de overhead pero es menos codigo a escribir :)
+  fat_fuse_truncate(path, 0);
+
+  // TODO: Liberar el primer cluster del archivo
+
+  // TODO: Borrar la dentry del archivo en el disco
+
+  return 0;
+
+}
+
 /* Shortens the file at the given offset.*/
 int fat_fuse_truncate(const char *path, off_t offset) {
     errno = 0;
