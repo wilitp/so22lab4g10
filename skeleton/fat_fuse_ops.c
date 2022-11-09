@@ -323,6 +323,23 @@ int fat_fuse_utime(const char *path, struct utimbuf *buf) {
     return -errno;
 }
 
+int fat_fuse_rmdir(const char *path) {
+    fat_volume vol = get_fat_volume();
+    fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
+    fat_file file = fat_tree_get_file(file_node);
+    if (!fat_file_is_directory(file)) {
+        return -ENOTDIR;
+    }
+    fat_file *children = fat_tree_flatten_h_children(file_node);
+    if (children[0] == NULL){
+        free(children);
+        return fat_fuse_unlink(path);
+    } else {
+        free(children);
+        return -ENOTEMPTY;
+    }
+}
+
 int fat_fuse_unlink(const char *path) {
 
     // Dejamos el archivo en tamanio 0
