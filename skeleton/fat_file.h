@@ -102,6 +102,9 @@ struct fat_file_s {
     u32 children_read : 1;
 };
 
+
+void write_dir_entry(fat_file parent, fat_file file);
+
 /* Inits a file without using a parent's direntry. Can be used to create root file.
  * TAD is owner of @filepath and will apply free at destroy.
  */

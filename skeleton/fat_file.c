@@ -30,7 +30,6 @@
 //     printf("\t Attributes: %x\n", dentry->attribs);
 // }
 
-static void write_dir_entry(fat_file parent, fat_file file);
 
 /* Fills fields last_modified_time, last_modified_date, last_access_date,
  * create_date and create_time of a *in disk* file directory entry @dir_entry,
@@ -299,7 +298,7 @@ void fat_file_to_stbuf(fat_file file, struct stat *stbuf) {
 /********************* DIRECTORY ENTRY METADATA *********************/
 
 /* Writes to disk @child_disk_entry, in the position @nentry of the @parent*/
-static void write_dir_entry(fat_file parent, fat_file file) {
+void write_dir_entry(fat_file parent, fat_file file) {
     // Calculate the starting position of the directory
     u32 chunk_size = fat_table_bytes_per_cluster(parent->table);
     off_t parent_offset =

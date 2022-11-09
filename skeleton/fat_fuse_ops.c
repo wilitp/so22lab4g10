@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
 
@@ -47,13 +46,14 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     int message_size = strlen(buf);
 
     fat_volume vol = get_fat_volume();
-    fat_tree_node log_file_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
+    fat_tree_node log_file_node =
+        fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
     fat_file log_file = fat_tree_get_file(log_file_node);
     fat_file log_file_parent = fat_tree_get_parent(log_file_node);
 
-    fat_file_pwrite(log_file, buf, message_size, log_file->dentry->file_size, log_file_parent);
+    fat_file_pwrite(log_file, buf, message_size, log_file->dentry->file_size,
+                    log_file_parent);
 }
-
 
 /* Get file attributes (file descriptor version) */
 int fat_fuse_fgetattr(const char *path, struct stat *stbuf,
@@ -118,9 +118,9 @@ int fat_fuse_opendir(const char *path, struct fuse_file_info *fi) {
 
 /* Read directory children. Calls function fat_file_read_children which returns
  * a list of files inside a GList. The children were read from the directory
- * entries in the cluster of the directory. 
- * This function iterates over the list of children and adds them to the 
- * file tree. 
+ * entries in the cluster of the directory.
+ * This function iterates over the list of children and adds them to the
+ * file tree.
  * This operation should be performed only once per directory, the first time
  * readdir is called.
  */
@@ -134,15 +134,16 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
     }
 
-
-    if(strcmp(dir->filepath, "/") == 0) {
+    if (strcmp(dir->filepath, "/") == 0) {
         // Inicializar log dir huerfano e insertarlo como hijo de /(root node)
-        bb_init_log_dir(); 
-        fat_fuse_read_children(fat_tree_node_search(vol->file_tree, BB_DIRNAME));
+        bb_init_log_dir();
+        fat_fuse_read_children(
+            fat_tree_node_search(vol->file_tree, BB_DIRNAME));
 
-        // Creacion de /bb/fs.log si es que no existe en el directorio creado/encontrado
-        // Y si fue creado con exito el dir /bb
-        if(fat_tree_node_search(vol->file_tree, BB_DIRNAME) != NULL && fat_tree_node_search(vol->file_tree, BB_LOG_FILE) == NULL) {
+        // Creacion de /bb/fs.log si es que no existe en el directorio
+        // creado/encontrado Y si fue creado con exito el dir /bb
+        if (fat_tree_node_search(vol->file_tree, BB_DIRNAME) != NULL &&
+            fat_tree_node_search(vol->file_tree, BB_LOG_FILE) == NULL) {
             DEBUG("Create the log file\n");
             fat_fuse_mknod(BB_LOG_FILE, 0, 0);
         }
@@ -322,19 +323,33 @@ int fat_fuse_utime(const char *path, struct utimbuf *buf) {
     return -errno;
 }
 
-
 int fat_fuse_unlink(const char *path) {
 
-  // Dejamos el archivo en tamanio 0
-  // Esto tiene un toq de overhead pero es menos codigo a escribir :)
-  fat_fuse_truncate(path, 0);
+    // Dejamos el archivo en tamanio 0
+    // Esto tiene un toq de overhead pero es menos codigo a escribir :)
+    fat_fuse_truncate(path, 0);
 
-  // TODO: Liberar el primer cluster del archivo
+    // Liberar el primer cluster del archivo
+    fat_volume vol = get_fat_volume();
+    fat_table table = vol->table;
+    fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
+    fat_file file = fat_tree_get_file(file_node);
+    fat_table_set_next_cluster(table, file->start_cluster, FAT_CLUSTER_FREE);
 
-  // TODO: Borrar la dentry del archivo en el disco
+    // Marcar la dentry del archivo en el disco
+    fat_file parent = fat_tree_get_parent(file_node);
+    u32 *free_entry_index = malloc(sizeof(u32));
+    *free_entry_index = file->pos_in_parent;
 
-  return 0;
+    parent->dir.free_entries = g_list_append(parent->dir.free_entries, free_entry_index);
 
+    ((u8 *)(file->dentry))[0] = FILE_FOR_DELETION;
+
+    write_dir_entry(parent, file);
+
+    // Borrar el archivo del tree en memoria
+    fat_tree_delete(vol->file_tree, path);
+    return 0;
 }
 
 /* Shortens the file at the given offset.*/
