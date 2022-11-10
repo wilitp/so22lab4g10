@@ -178,7 +178,7 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // children -> *child1 | *child2 | *child 3 | *child4 | NULL
     child = children;
     while (*child != NULL) {
-        if(strcmp((*child)->filepath, BB_LOG_FILE) != 0){
+        if(strcmp((*child)->filepath, BB_LOG_FILE) != 0 && strcmp((*child)->filepath, BB_DIRNAME) != 0){
             error = (*filler)(buf, (*child)->name, NULL, 0);
             if (error != 0) {
                 return -errno;
