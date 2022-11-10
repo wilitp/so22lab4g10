@@ -81,6 +81,8 @@ struct fat_file_s {
             // ones). It also marks the position of the first free space for a
             // dir_entry.
             u32 nentries;
+            // Unused entry indices' list 
+            GList *free_entries;
         } dir;
         // Valid only for non-directory files
         struct {
@@ -180,6 +182,9 @@ ssize_t fat_file_pread(fat_file file, void *buf, size_t size, off_t offset,
  * If there is an error in the read or write operations, sets errno to EIO
  */
 void fat_file_truncate(fat_file file, off_t offset, fat_file parent);
+
+/* Initializes cluster for use as an empty directory */
+void fat_file_init_dir_cluster(fat_file dir);
 
 /* Write @size bytes from the FAT file @file at offset @offset, reading from
  * result into the buffer @buf. Returns a negative error number on failure,
