@@ -18,8 +18,8 @@ if (debug) {
 
 ### ¿Hay alguna manera de saber el nombre del archivo guardado en el cluster 157?
 
-Podemos recorrer las dir entries a partir del root, de manera recursiva en directorios, hasta encontrar una entry cuyo start_cluster sea el 157.
-De esta dir_entry sacamos el nombre `dir_entry->name`
+Podemos recorrer las dir entries a partir del root, de manera recursiva en directorios, hasta encontrar una entry cuyo start_cluster(o uno de los clusters en la cadena) sea el 157.
+De esta dir_entry sacamos el nombre `dir_entry->basename`
 
 ### ¿Dónde se guardan las entradas de directorio? ¿Cuántos archivos puede tener adentro un directorio en FAT32?
 
