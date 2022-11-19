@@ -337,7 +337,6 @@ void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf) {
 void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     u32 nentries = parent->dir.nentries;
     u32 *free_entry_index = g_list_nth_data(parent->dir.free_entries, 0);
-    child->pos_in_parent = nentries;
     if(free_entry_index == NULL) {
         child->pos_in_parent = nentries;
         fat_dir_entry terminator_entry = fat_file_init_direntry(false, strdup(""), 2);
@@ -346,7 +345,10 @@ void fat_file_dentry_add_child(fat_file parent, fat_file child) {
         aux_terminator_file->pos_in_parent = child->pos_in_parent + 1;
         write_dir_entry(parent, aux_terminator_file);
         fat_file_destroy(aux_terminator_file);
+        // Aumentamos el contador de dentries, ya que movimos el null terminator hacia adelante
+        parent->dir.nentries++;
     } else {
+        parent->dir.free_entries = g_list_remove_link(parent->dir.free_entries, parent->dir.free_entries);
         child->pos_in_parent = *free_entry_index;
     }
     write_dir_entry(parent, child);
@@ -355,7 +357,6 @@ void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     }
     DEBUG("Adding child \"%s\" to \"%s\" in position %u", child->name,
           parent->filepath, parent->dir.nentries);
-    parent->dir.nentries++;
 }
 
 /* Returns %true iff the given FAT on-disk directory entry is the special

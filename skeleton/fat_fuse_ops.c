@@ -266,10 +266,13 @@ int fat_fuse_mkdir(const char *path, mode_t mode) {
     if (errno != 0) {
         return -errno;
     }
-    // insert to directory tree representation
-    vol->file_tree = fat_tree_insert(vol->file_tree, parent_node, new_file);
     // write file in parent's entry (disk)
     fat_file_dentry_add_child(parent, new_file);
+    if (errno != 0) {
+        return -errno;
+    }
+    // insert to directory tree representation
+    vol->file_tree = fat_tree_insert(vol->file_tree, parent_node, new_file);
     fat_file_init_dir_cluster(new_file);
     return -errno;
 }
@@ -298,10 +301,13 @@ int fat_fuse_mknod(const char *path, mode_t mode, dev_t dev) {
     if (errno < 0) {
         return -errno;
     }
-    // insert to directory tree representation
-    vol->file_tree = fat_tree_insert(vol->file_tree, parent_node, new_file);
     // Write dentry in parent cluster
     fat_file_dentry_add_child(parent, new_file);
+    if (errno != 0) {
+        return -errno;
+    }
+    // insert to directory tree representation
+    vol->file_tree = fat_tree_insert(vol->file_tree, parent_node, new_file);
     return -errno;
 }
 
