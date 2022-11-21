@@ -1,5 +1,7 @@
 # Informe
 
+[Resumen de todos los cambios hechos](changes_made.md)  
+
 ### Cuando se ejecuta el main con la opción -d, ¿qué se está mostrando en la pantalla?
 
 se esta mostrando la ejecuccion del comando en modo debug, son mensajes de desarrollo de todas las funciones de fuse.

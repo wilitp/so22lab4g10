@@ -78,10 +78,9 @@ struct fat_file_s {
         // Valid only for directories
         struct {
             // Number of consecutive dir entries in disk (including ignored
-            // ones). It also marks the position of the first free space for a
-            // dir_entry.
+            // ones). It also marks the position of the first free space for a dir_entry.
             u32 nentries;
-            // Unused entry indices' list 
+            // Unused entry indices list 
             GList *free_entries;
         } dir;
         // Valid only for non-directory files
@@ -102,7 +101,7 @@ struct fat_file_s {
     u32 children_read : 1;
 };
 
-
+// sync de la dentry en el disco
 void write_dir_entry(fat_file parent, fat_file file);
 
 /* Inits a file without using a parent's direntry. Can be used to create root file.
@@ -186,7 +185,8 @@ ssize_t fat_file_pread(fat_file file, void *buf, size_t size, off_t offset,
  */
 void fat_file_truncate(fat_file file, off_t offset, fat_file parent);
 
-/* Initializes cluster for use as an empty directory */
+/* Initializes cluster for use as an empty directory 
+    (Escribe la primer parte en 0, null terminated)*/
 void fat_file_init_dir_cluster(fat_file dir);
 
 /* Write @size bytes from the FAT file @file at offset @offset, reading from

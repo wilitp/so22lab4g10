@@ -101,17 +101,16 @@ int bb_init_log_dir() {
     fat_volume vol = get_fat_volume();
     
 
-    // Hacer la busqueda
+    // Busca el BB cluster (directorio huerfano)
     u32 start_cluster = search_bb_orphan_dir_cluster();
 
-    // Si no existe buscamos uno libre y lo inicializamos ahi
+    // Si no encontramos uno libre y lo inicializamos ahi
     if(start_cluster == 0) {
         start_cluster = fat_table_get_next_free_cluster(vol->table);
         // Marcar el cluster como malo
         fat_table_set_next_cluster(vol->table, start_cluster, FAT_CLUSTER_BAD_SECTOR);
     } 
     bb_create_new_orphan_dir(start_cluster);
-
 
     return -errno;
 }

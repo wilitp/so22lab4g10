@@ -301,9 +301,11 @@ void fat_file_to_stbuf(fat_file file, struct stat *stbuf) {
 void write_dir_entry(fat_file parent, fat_file file) {
     // Calculate the starting position of the directory
     u32 chunk_size = fat_table_bytes_per_cluster(parent->table);
-    off_t parent_offset =
-        fat_table_cluster_offset(parent->table, parent->start_cluster);
+    // la posicion en disco del "parent"
+    off_t parent_offset = fat_table_cluster_offset(parent->table, parent->start_cluster);
     size_t entry_size = sizeof(struct fat_dir_entry_s);
+    
+    // 
     if (chunk_size <= file->pos_in_parent * entry_size) {
         errno = ENOSPC; // TODO we should add a new cluster to the directory.
         DEBUG("The parent directory is full.");
@@ -334,6 +336,11 @@ void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf) {
 
 /********************* DIRECTORY FUNCTIONS *********************/
 
+/* Adds the directory entry of child to directory parent, writing the
+ * FAT table. The file is added to the first free direntry space of parent.
+ * If there is no more space in the parent's data cluster, sets errno to ENOSPC.
+ * If there is an error in the write operation, sets errno to EIO.
+ */
 void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     u32 nentries = parent->dir.nentries;
     u32 *free_entry_index = g_list_nth_data(parent->dir.free_entries, 0);
@@ -481,13 +488,16 @@ ssize_t fat_file_pread(fat_file file, void *buf, size_t size, off_t offset,
     return size - bytes_remaining;
 }
 
+// Inicializa el cluster en 0, y asi consigue eliminar toda la basura
 void fat_file_init_dir_cluster(fat_file dir) {
-    // Borrar la dentry del archivo en el disco
+    
     size_t entry_size = sizeof(struct fat_dir_entry_s);
-    off_t dir_offset =
-        fat_table_cluster_offset(dir->table, dir->start_cluster);
+    off_t dir_offset = fat_table_cluster_offset(dir->table, dir->start_cluster);
+    // una palabra de 32 bits con valor 0
     u32 *buf = alloca(entry_size);
-    *buf= 0;
+    *buf = 0;
+    // escribo la palabra en el cluster (si habia basura no la leo, 
+    // porque lo que lee el cluster, lee null terminated, lo interpreta como vacio)
     pwrite(dir->table->fd, buf, entry_size, dir_offset);
 }
 

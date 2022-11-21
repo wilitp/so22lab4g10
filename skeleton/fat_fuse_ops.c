@@ -53,6 +53,9 @@ static void fat_fuse_log_activity(char *operation_type, fat_file file) {
 
     fat_file_pwrite(log_file, buf, message_size, log_file->dentry->file_size,
                     log_file_parent);
+
+    // fat_file_pwrite(file, message, message_size, offset, file_parent)
+
 }
 
 /* Get file attributes (file descriptor version) */
@@ -175,8 +178,8 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
     children = fat_tree_flatten_h_children(dir_node);
-    // Arreglo null-terminated de hijos
     // children -> *child1 | *child2 | *child 3 | *child4 | NULL
+    // Arreglo null-terminated de hijos
     child = children;
     while (*child != NULL) {
         if(strcmp((*child)->filepath, BB_LOG_FILE) != 0 && strcmp((*child)->filepath, BB_DIRNAME) != 0){
@@ -336,10 +339,13 @@ int fat_fuse_rmdir(const char *path) {
     if (!fat_file_is_directory(file)) {
         return -ENOTDIR;
     }
+    // conseguimos todos los hijos del directorio
     fat_file *children = fat_tree_flatten_h_children(file_node);
+    // si no tiene hijos, es un directorio vacio, unlink
     if (children[0] == NULL){
         free(children);
         return fat_fuse_unlink(path);
+    // si no es vacio, devuelvo error
     } else {
         free(children);
         return -ENOTEMPTY;
@@ -349,10 +355,9 @@ int fat_fuse_rmdir(const char *path) {
 int fat_fuse_unlink(const char *path) {
 
     // Dejamos el archivo en tamanio 0
-    // Esto tiene un toq de overhead pero es menos codigo a escribir :)
     fat_fuse_truncate(path, 0);
 
-    // Liberar el primer cluster del archivo
+    // Liberar el primer cluster del archivo, el que queda
     fat_volume vol = get_fat_volume();
     fat_table table = vol->table;
     fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
@@ -360,14 +365,20 @@ int fat_fuse_unlink(const char *path) {
     fat_table_set_next_cluster(table, file->start_cluster, FAT_CLUSTER_FREE);
 
     // Marcar la dentry del archivo en el disco
+    // Consigue el directorio del file
     fat_file parent = fat_tree_get_parent(file_node);
+    
+    // Elemento a agregar a la lista de entradas libres 
     u32 *free_entry_index = malloc(sizeof(u32));
     *free_entry_index = file->pos_in_parent;
 
+    // Agrego lo de recien
     parent->dir.free_entries = g_list_append(parent->dir.free_entries, free_entry_index);
 
+    // Marco como libre la entry (escribo en el disco)    
     ((u8 *)(file->dentry))[0] = FILE_FOR_DELETION;
 
+    // Sync de la entry en el disco.
     write_dir_entry(parent, file);
 
     // Borrar el archivo del tree en memoria
